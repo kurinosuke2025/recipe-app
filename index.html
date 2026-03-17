@@ -693,10 +693,18 @@ ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` :
   window._currentServings = servings;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    if (!window._apiKey) {
+      const key = prompt('APIキーを入力してください（sk-ant-から始まる文字列）');
+      if (!key) { document.getElementById('errorBox').classList.add('show'); document.getElementById('loading').classList.remove('show'); document.getElementById('generateBtn').disabled = false; return; }
+      window._apiKey = key;
+    }
+    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.anthropic.com/v1/messages'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      'x-api-key': 'sk-antapi03y6pJj73wWHXZ6HinqoBu2fXilcQxwuOEIrs2qbluAIigVY1QErSnZe8x1TaKfdqlgRW9KRIcgYoRnURxK13bcQ-uXmf6gAA',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': window._apiKey,
+        'anthropic-version': '2023-06-01'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,

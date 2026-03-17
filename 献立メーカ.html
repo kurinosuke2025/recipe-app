@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今日なに作る？</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --card: #1a1814;
+    --card2: #231f1a;
+    --accent: #e8a045;
+    --accent2: #c45c2a;
+    --text: #f0ebe3;
+    --text2: #9a9185;
+    --green: #5a8a5e;
+    --red: #c44a3a;
+    --border: rgba(232,160,69,0.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 16px 40px;
+  }
+  .phone {
+    width: 100%;
+    max-width: 390px;
+    background: var(--bg);
+    border-radius: 40px;
+    overflow: hidden;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .status-bar {
+    height: 44px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+  }
+  .header {
+    padding: 8px 24px 20px;
+    background: linear-gradient(180deg, var(--bg) 0%, transparent 100%);
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .app-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+  .app-sub {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .premium-badge {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .premium-badge:hover { transform: scale(1.05); }
+
+  .content { padding: 0 20px; }
+
+  /* Section */
+  .section { margin-bottom: 24px; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Chips */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 100px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+  .chip .emoji { font-size: 15px; }
+  .chip:hover { background: var(--card2); border-color: rgba(232,160,69,0.4); }
+  .chip.active {
+    background: linear-gradient(135deg, rgba(232,160,69,0.2), rgba(196,92,42,0.15));
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 0 12px rgba(232,160,69,0.15);
+  }
+
+  /* Generate Button */
+  .generate-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.5px;
+    box-shadow: 0 8px 24px rgba(232,160,69,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(232,160,69,0.4); }
+  .generate-btn:active { transform: translateY(0); }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Loading */
+  .loading {
+    text-align: center;
+    padding: 40px 20px;
+    display: none;
+  }
+  .loading.show { display: block; }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text2); font-size: 14px; }
+
+  /* Results */
+  .results { display: none; }
+  .results.show { display: block; }
+  .results-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .results-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .recipe-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .recipe-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .recipe-card:hover { background: var(--card2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .recipe-card:hover::before { opacity: 1; }
+  .recipe-card.expanded { background: var(--card2); }
+  .recipe-card.expanded::before { opacity: 1; }
+
+  .recipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .recipe-name {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .recipe-meta {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .meta-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 100px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .meta-pill.cal { color: #e07070; }
+  .meta-pill.price { color: #70b870; }
+  .recipe-desc {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .expand-icon {
+    color: var(--text2);
+    font-size: 20px;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .recipe-card.expanded .expand-icon { transform: rotate(180deg); }
+
+  /* Pro Tips */
+  .pro-section {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.5s ease;
+  }
+  .recipe-card.expanded .pro-section { max-height: 600px; }
+  .pro-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 16px 0;
+  }
+  .pro-lock {
+    background: linear-gradient(135deg, rgba(232,160,69,0.1), rgba(196,92,42,0.08));
+    border: 1px dashed rgba(232,160,69,0.3);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .lock-icon { font-size: 28px; }
+  .lock-text { flex: 1; }
+  .lock-title { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 3px; }
+  .lock-sub { font-size: 11px; color: var(--text2); line-height: 1.5; }
+  .lock-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .lock-btn:hover { transform: scale(1.05); }
+  
+  .pro-tips {
+    display: none;
+  }
+  .pro-tips.unlocked { display: block; }
+  .pro-tip-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .tip-num {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .tip-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+
+  /* Premium Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 28px 28px 20px 20px;
+    padding: 32px 24px 40px;
+    width: 100%;
+    max-width: 390px;
+    border: 1px solid var(--border);
+    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(80px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 24px;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    color: var(--accent);
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .modal-sub { text-align: center; color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+  .plan-card {
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .plan-card:hover { border-color: var(--accent); background: rgba(232,160,69,0.05); }
+  .plan-card.best {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(232,160,69,0.1), rgba(196,92,42,0.07));
+    position: relative;
+  }
+  .best-tag {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 10px;
+  }
+  .plan-name { font-weight: 700; font-size: 15px; margin-bottom: 3px; }
+  .plan-desc { font-size: 12px; color: var(--text2); }
+  .plan-price { text-align: right; }
+  .price-num { font-size: 20px; font-weight: 900; color: var(--accent); }
+  .price-period { font-size: 11px; color: var(--text2); }
+  .modal-cta {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 900;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    margin-top: 20px;
+    box-shadow: 0 8px 24px rgba(232,160,69,0.3);
+    transition: all 0.2s;
+  }
+  .modal-cta:hover { transform: translateY(-2px); }
+  .modal-close {
+    display: block;
+    text-align: center;
+    color: var(--text2);
+    font-size: 13px;
+    margin-top: 14px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  /* Unlocked state */
+  .unlocked-banner {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    background: rgba(90,138,94,0.15);
+    border: 1px solid rgba(90,138,94,0.3);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--green);
+  }
+  .unlocked-banner.show { display: flex; }
+
+  /* Error */
+  .error-box {
+    background: rgba(196,74,58,0.1);
+    border: 1px solid rgba(196,74,58,0.3);
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 13px;
+    color: #e07070;
+    text-align: center;
+    display: none;
+    margin-bottom: 16px;
+  }
+  .error-box.show { display: block; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span>📶 🔋</span>
+  </div>
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="app-title">今日なに作る？</div>
+        <div class="app-sub">AI Recipe Suggester</div>
+      </div>
+      <div class="premium-badge" onclick="showModal()">✨ PREMIUM</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- 食材 -->
+    <div class="section">
+      <div class="section-label">メイン食材</div>
+      <div class="chips" id="ingredients">
+        <div class="chip" data-val="豚肉"><span class="emoji">🐷</span>豚肉</div>
+        <div class="chip" data-val="牛肉"><span class="emoji">🐮</span>牛肉</div>
+        <div class="chip" data-val="鶏肉"><span class="emoji">🐔</span>鶏肉</div>
+        <div class="chip" data-val="魚"><span class="emoji">🐟</span>魚</div>
+        <div class="chip" data-val="豆腐"><span class="emoji">🫘</span>豆腐</div>
+        <div class="chip" data-val="卵"><span class="emoji">🥚</span>卵</div>
+        <div class="chip" data-val="野菜のみ"><span class="emoji">🥦</span>野菜のみ</div>
+      </div>
+    </div>
+
+    <!-- 野菜 -->
+    <div class="section">
+      <div class="section-label">野菜・副食材</div>
+      <div class="chips" id="vegetables">
+        <div class="chip" data-val="じゃがいも"><span class="emoji">🥔</span>じゃがいも</div>
+        <div class="chip" data-val="にんじん"><span class="emoji">🥕</span>にんじん</div>
+        <div class="chip" data-val="玉ねぎ"><span class="emoji">🧅</span>玉ねぎ</div>
+        <div class="chip" data-val="ブロッコリー"><span class="emoji">🥦</span>ブロッコリー</div>
+        <div class="chip" data-val="キャベツ"><span class="emoji">🥬</span>キャベツ</div>
+        <div class="chip" data-val="白菜"><span class="emoji">🥬</span>白菜</div>
+        <div class="chip" data-val="ほうれん草"><span class="emoji">🌿</span>ほうれん草</div>
+        <div class="chip" data-val="トマト"><span class="emoji">🍅</span>トマト</div>
+        <div class="chip" data-val="ピーマン"><span class="emoji">🫑</span>ピーマン</div>
+        <div class="chip" data-val="なす"><span class="emoji">🍆</span>なす</div>
+        <div class="chip" data-val="きのこ"><span class="emoji">🍄</span>きのこ</div>
+        <div class="chip" data-val="長ねぎ"><span class="emoji">🌱</span>長ねぎ</div>
+        <div class="chip" data-val="もやし"><span class="emoji">🌾</span>もやし</div>
+        <div class="chip" data-val="大根"><span class="emoji">🫚</span>大根</div>
+        <div class="chip" data-val="ごぼう"><span class="emoji">🌿</span>ごぼう</div>
+        <div class="chip" data-val="さつまいも"><span class="emoji">🍠</span>さつまいも</div>
+      </div>
+    </div>
+
+    <!-- 調味料 -->
+    <div class="section">
+      <div class="section-label">調味料</div>
+      <div class="chips" id="seasonings">
+        <div class="chip" data-val="醤油"><span class="emoji">🫙</span>醤油</div>
+        <div class="chip" data-val="みりん"><span class="emoji">🍶</span>みりん</div>
+        <div class="chip" data-val="砂糖"><span class="emoji">🍬</span>砂糖</div>
+        <div class="chip" data-val="酢"><span class="emoji">🧴</span>酢</div>
+        <div class="chip" data-val="味噌"><span class="emoji">🥣</span>味噌</div>
+        <div class="chip" data-val="塩・胡椒"><span class="emoji">🧂</span>塩・胡椒</div>
+        <div class="chip" data-val="ケチャップ"><span class="emoji">🍅</span>ケチャップ</div>
+        <div class="chip" data-val="マヨネーズ"><span class="emoji">🥫</span>マヨネーズ</div>
+        <div class="chip" data-val="オリーブオイル"><span class="emoji">🫒</span>オリーブオイル</div>
+        <div class="chip" data-val="ごま油"><span class="emoji">🌰</span>ごま油</div>
+      </div>
+    </div>
+
+    <!-- 調理方法 -->
+    <div class="section">
+      <div class="section-label">調理方法</div>
+      <div class="chips" id="methods">
+        <div class="chip" data-val="焼く"><span class="emoji">🔥</span>焼く</div>
+        <div class="chip" data-val="煮る"><span class="emoji">🫕</span>煮る</div>
+        <div class="chip" data-val="揚げる"><span class="emoji">🍳</span>揚げる</div>
+        <div class="chip" data-val="蒸す"><span class="emoji">♨️</span>蒸す</div>
+        <div class="chip" data-val="炒める"><span class="emoji">🥘</span>炒める</div>
+        <div class="chip" data-val="和える"><span class="emoji">🥗</span>和える</div>
+      </div>
+    </div>
+
+    <!-- 調理家電 -->
+    <div class="section">
+      <div class="section-label">調理家電</div>
+      <div class="chips" id="appliances">
+        <div class="chip" data-val="電子レンジ"><span class="emoji">📦</span>電子レンジ</div>
+        <div class="chip" data-val="圧力鍋"><span class="emoji">🫕</span>圧力鍋</div>
+        <div class="chip" data-val="炊飯器"><span class="emoji">🍚</span>炊飯器</div>
+        <div class="chip" data-val="トースター・オーブントースター"><span class="emoji">🍞</span>トースター</div>
+        <div class="chip" data-val="エアフライヤー"><span class="emoji">💨</span>エアフライヤー</div>
+        <div class="chip" data-val="ホットプレート"><span class="emoji">🍽️</span>ホットプレート</div>
+      </div>
+    </div>
+
+    <!-- 人数 -->
+    <div class="section">
+      <div class="section-label">人数</div>
+      <div class="chips" id="servings">
+        <div class="chip active" data-val="1"><span class="emoji">🧑</span>1人</div>
+        <div class="chip" data-val="2"><span class="emoji">👫</span>2人</div>
+        <div class="chip" data-val="3"><span class="emoji">👨‍👩‍👦</span>3人</div>
+        <div class="chip" data-val="4"><span class="emoji">👨‍👩‍👧‍👦</span>4人</div>
+      </div>
+    </div>
+
+    <div class="unlocked-banner" id="unlockedBanner">
+      ✅ PREMIUMモードでプロのコツが見られます！
+    </div>
+
+    <button class="generate-btn" id="generateBtn" onclick="generate()">
+      <span>🍽️</span>
+      <span>料理を提案してもらう</span>
+    </button>
+
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">AIが料理を考えています…</div>
+    </div>
+
+    <div class="error-box" id="errorBox">
+      ⚠️ エラーが発生しました。もう一度お試しください。
+    </div>
+
+    <div class="results" id="results">
+      <div class="results-label">おすすめ料理</div>
+      <div id="recipeList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✨ プレミアム</div>
+    <div class="modal-sub">プロのコツで料理が格段においしくなります</div>
+    <div class="plan-card" onclick="selectPlan(this)">
+      <div>
+        <div class="plan-name">月額プラン</div>
+        <div class="plan-desc">いつでもキャンセル可</div>
+      </div>
+      <div class="plan-price">
+        <div class="price-num">¥480</div>
+        <div class="price-period">/ 月</div>
+      </div>
+    </div>
+    <div class="plan-card best" onclick="selectPlan(this)">
+      <div class="best-tag">おすすめ</div>
+      <div>
+        <div class="plan-name">年間プラン</div>
+        <div class="plan-desc">月換算 ¥280〜 お得！</div>
+      </div>
+      <div class="plan-price">
+        <div class="price-num">¥3,380</div>
+        <div class="price-period">/ 年</div>
+      </div>
+    </div>
+    <button class="modal-cta" onclick="unlockPremium()">デモで体験する（無料）</button>
+    <span class="modal-close" onclick="closeModal()">あとで</span>
+  </div>
+</div>
+
+<script>
+let isPremium = false;
+
+// チップ選択
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const parent = chip.parentElement.id;
+    if (parent === 'seasonings' || parent === 'vegetables' || parent === 'appliances') {
+      chip.classList.toggle('active');
+    } else {
+      chip.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    }
+  });
+});
+
+function getSelected(groupId) {
+  return [...document.querySelectorAll(`#${groupId} .chip.active`)].map(c => c.dataset.val);
+}
+
+async function generate() {
+  const ingredients = getSelected('ingredients');
+  const vegetables = getSelected('vegetables');
+  const seasonings = getSelected('seasonings');
+  const methods = getSelected('methods');
+  const appliances = getSelected('appliances');
+  const servingsArr = getSelected('servings');
+  const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
+
+  if (!ingredients.length) { alert('食材を選んでください'); return; }
+  if (!seasonings.length) { alert('調味料を選んでください'); return; }
+  if (!methods.length) { alert('調理方法を選んでください'); return; }
+
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('generateBtn').disabled = true;
+
+  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+
+  const prompt = `あなたは料理の専門家です。以下の条件で家庭料理を3〜4品提案してください。
+
+メイン食材: ${ingredients.join('、')}
+${vegetables.length ? `野菜・副食材: ${vegetables.join('、')}` : ''}
+調味料: ${seasonings.join('、')}
+調理方法: ${methods.join('、')}
+${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` : ''}
+人数: ${servingsLabel}
+
+必ずJSON形式のみで返してください。以下の形式厳守：
+{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"tips":["コツ1","コツ2","コツ3"]}]}
+
+- calories: ${servingsLabel}合計のkcal（整数）
+- cost: ${servingsLabel}合計の目安原価（円、整数）
+- tips: プロの失敗しないコツ3つ
+- 他のテキスト・マークダウン一切不要`;
+
+  window._currentServings = servings;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      'x-api-key': 'sk-antapi03y6pJj73wWHXZ6HinqoBu2fXilcQxwuOEIrs2qbluAIigVY1QErSnZe8x1TaKfdqlgRW9KRIcgYoRnURxK13bcQ-uXmf6gAA',
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderRecipes(parsed.recipes);
+  } catch(e) {
+    document.getElementById('errorBox').classList.add('show');
+  } finally {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('generateBtn').disabled = false;
+  }
+}
+
+function renderRecipes(recipes) {
+  const list = document.getElementById('recipeList');
+  list.innerHTML = '';
+  recipes.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'recipe-card';
+    div.innerHTML = `
+      <div class="recipe-header">
+        <div class="recipe-name">${r.name}</div>
+        <div class="expand-icon">⌄</div>
+      </div>
+      <div class="recipe-meta">
+        <div class="meta-pill cal">🔥 ${r.calories} kcal</div>
+        <div class="meta-pill price">💴 約¥${r.cost}</div>
+        <div class="meta-pill">👤 ${window._currentServings || 1}人前</div>
+      </div>
+      <div class="recipe-desc">${r.description}</div>
+      <div class="pro-section">
+        <div class="pro-divider"></div>
+        ${isPremium ? renderTips(r.tips) : renderLock()}
+      </div>
+    `;
+    div.addEventListener('click', () => {
+      div.classList.toggle('expanded');
+    });
+    list.appendChild(div);
+  });
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderTips(tips) {
+  return `<div class="pro-tips unlocked">
+    ${tips.map((t, i) => `<div class="pro-tip-item"><div class="tip-num">${i+1}</div><div class="tip-text">${t}</div></div>`).join('')}
+  </div>`;
+}
+
+function renderLock() {
+  return `<div class="pro-lock">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-text">
+      <div class="lock-title">プロのコツを見る</div>
+      <div class="lock-sub">失敗しないポイント・テクニック3つ</div>
+    </div>
+    <button class="lock-btn" onclick="showModal();event.stopPropagation()">解除</button>
+  </div>`;
+}
+
+function showModal() {
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+function selectPlan(el) {
+  document.querySelectorAll('.plan-card').forEach(c => c.style.opacity = '0.6');
+  el.style.opacity = '1';
+}
+function unlockPremium() {
+  isPremium = true;
+  closeModal();
+  document.getElementById('unlockedBanner').classList.add('show');
+  // 既存のカードを再レンダリング
+  const cards = document.querySelectorAll('.recipe-card');
+  cards.forEach(card => {
+    const lockSection = card.querySelector('.pro-lock');
+    if (lockSection) {
+      const proSection = card.querySelector('.pro-section');
+      const name = card.querySelector('.recipe-name').textContent;
+      proSection.innerHTML = `<div class="pro-divider"></div><div class="pro-tips unlocked"><div class="pro-tip-item"><div class="tip-num">1</div><div class="tip-text">素材の下処理をしっかり行い、余分な水分をキッチンペーパーで取り除くと仕上がりが格段に良くなります</div></div><div class="pro-tip-item"><div class="tip-num">2</div><div class="tip-text">調理前に食材を常温に戻しておくことで、火の通りが均一になり失敗しにくくなります</div></div><div class="pro-tip-item"><div class="tip-num">3</div><div class="tip-text">味付けは最後の仕上げで調整。途中で味見を繰り返しながら少しずつ加えるのがプロの流儀です</div></div></div>`;
+    }
+  });
+}
+</script>
+</body>
+</html>

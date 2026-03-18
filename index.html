@@ -693,7 +693,7 @@ ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` :
   window._currentServings = servings;
 
   try {
-    const res = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.anthropic.com/v1/messages'), {
+    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

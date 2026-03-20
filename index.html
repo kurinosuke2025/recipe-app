@@ -662,10 +662,6 @@ async function generate() {
   const servingsArr = getSelected('servings');
   const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
 
-  if (!ingredients.length) { alert('食材を選んでください'); return; }
-  if (!seasonings.length) { alert('調味料を選んでください'); return; }
-  if (!methods.length) { alert('調理方法を選んでください'); return; }
-
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
   document.getElementById('errorBox').classList.remove('show');

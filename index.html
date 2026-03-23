@@ -450,6 +450,31 @@
   }
   .unlocked-banner.show { display: flex; }
 
+  /* Steps */
+  .steps-list { margin-bottom: 4px; }
+  .step-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 22px;
+    height: 22px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
+
   /* Error */
   .error-box {
     background: rgba(196,74,58,0.1);
@@ -679,10 +704,11 @@ ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` :
 人数: ${servingsLabel}
 
 必ずJSON形式のみで返してください。以下の形式厳守：
-{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"tips":["コツ1","コツ2","コツ3"]}]}
+{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
 
 - calories: ${servingsLabel}合計のkcal（整数）
 - cost: ${servingsLabel}合計の目安原価（円、整数）
+- steps: 作り方を10ステップ前後で（例：食材を切る、調味料を合わせる、焼く、盛りつける）
 - tips: プロの失敗しないコツ3つ
 - 他のテキスト・マークダウン一切不要`;
 
@@ -697,7 +723,7 @@ ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` :
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }]
       })
     });
@@ -732,6 +758,10 @@ function renderRecipes(recipes) {
       </div>
       <div class="recipe-desc">${r.description}</div>
       <div class="pro-section">
+        <div class="pro-divider"></div>
+        <div class="steps-list">
+          ${(r.steps || []).map((s, i) => `<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`).join('')}
+        </div>
         <div class="pro-divider"></div>
         ${isPremium ? renderTips(r.tips) : renderLock()}
       </div>

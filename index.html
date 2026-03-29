@@ -475,6 +475,81 @@
   }
   .step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
 
+  /* Shopping List Button */
+  .shopping-btn {
+    width: 100%;
+    padding: 15px;
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    color: var(--accent);
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .shopping-btn:hover { background: rgba(232,160,69,0.08); border-color: var(--accent); }
+  .shopping-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Shopping List */
+  .shopping-section { display: none; margin-bottom: 28px; }
+  .shopping-section.show { display: block; }
+  .shopping-category {
+    margin-bottom: 16px;
+  }
+  .shopping-category-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .shopping-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 13px;
+  }
+  .shopping-item:hover { background: var(--card2); }
+  .shopping-item.checked {
+    opacity: 0.4;
+    text-decoration: line-through;
+  }
+  .check-box {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 5px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    transition: all 0.2s;
+  }
+  .shopping-item.checked .check-box {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+
   /* Error */
   .error-box {
     background: rgba(196,74,58,0.1);
@@ -621,6 +696,20 @@
     <div class="results" id="results">
       <div class="results-label">おすすめ料理</div>
       <div id="recipeList"></div>
+      <button class="shopping-btn" id="shoppingBtn" onclick="generateShopping()">
+        <span>🛒</span>
+        <span>買い出しリストを作る</span>
+      </button>
+    </div>
+
+    <div class="loading" id="shoppingLoading" style="display:none;">
+      <div class="spinner"></div>
+      <div class="loading-text">買い出しリストを作成中…</div>
+    </div>
+
+    <div class="shopping-section" id="shoppingSection">
+      <div class="results-label">🛒 買い出しリスト</div>
+      <div id="shoppingList"></div>
     </div>
 
   </div>
@@ -690,6 +779,7 @@ async function generate() {
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
   document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('shoppingSection').classList.remove('show');
   document.getElementById('generateBtn').disabled = true;
 
   const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
@@ -790,6 +880,72 @@ function renderLock() {
     </div>
     <button class="lock-btn" onclick="showModal();event.stopPropagation()">解除</button>
   </div>`;
+}
+
+async function generateShopping() {
+  const recipeNames = [...document.querySelectorAll('.recipe-name')].map(el => el.textContent);
+  if (!recipeNames.length) return;
+
+  document.getElementById('shoppingBtn').disabled = true;
+  document.getElementById('shoppingLoading').style.display = 'block';
+  document.getElementById('shoppingSection').classList.remove('show');
+
+  const servings = window._currentServings || 1;
+  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+
+  const prompt = `以下の料理（${servingsLabel}）の買い出しリストを作ってください。
+料理：${recipeNames.join('、')}
+
+必ずJSON形式のみで返してください。食材をカテゴリ別に分類してください：
+{"categories":[{"name":"カテゴリ名","emoji":"絵文字","items":["食材（量）","食材（量）"]}]}
+
+- カテゴリ例：肉・魚、野菜、調味料・乾物、その他
+- 各食材に${servingsLabel}分の目安量を括弧内に記載
+- 家庭に常備されている基本調味料（塩・醤油等）は省略可
+- 他のテキスト・マークダウン一切不要`;
+
+  try {
+    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderShopping(parsed.categories);
+  } catch(e) {
+    document.getElementById('errorBox').classList.add('show');
+  } finally {
+    document.getElementById('shoppingLoading').style.display = 'none';
+    document.getElementById('shoppingBtn').disabled = false;
+  }
+}
+
+function renderShopping(categories) {
+  const list = document.getElementById('shoppingList');
+  list.innerHTML = '';
+  categories.forEach(cat => {
+    const div = document.createElement('div');
+    div.className = 'shopping-category';
+    div.innerHTML = `
+      <div class="shopping-category-title">${cat.emoji} ${cat.name}</div>
+      ${cat.items.map(item => `
+        <div class="shopping-item" onclick="this.classList.toggle('checked')">
+          <div class="check-box">✓</div>
+          <span>${item}</span>
+        </div>
+      `).join('')}
+    `;
+    list.appendChild(div);
+  });
+  document.getElementById('shoppingSection').classList.add('show');
+  document.getElementById('shoppingSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function showModal() {

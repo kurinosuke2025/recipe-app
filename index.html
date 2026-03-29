@@ -1261,12 +1261,19 @@
 
     <!-- 人数 -->
     <div class="section">
-      <div class="section-label">人数</div>
-      <div class="chips" id="servings">
-        <div class="chip active" data-val="1"><span class="emoji">🧑</span>1人</div>
-        <div class="chip" data-val="2"><span class="emoji">👫</span>2人</div>
-        <div class="chip" data-val="3"><span class="emoji">👨‍👩‍👦</span>3人</div>
-        <div class="chip" data-val="4"><span class="emoji">👨‍👩‍👧‍👦</span>4人</div>
+      <div class="section-label">大人の人数</div>
+      <div class="chips" id="adultsServings">
+        <div class="chip active" data-val="2"><span class="emoji">👫</span>2人</div>
+        <div class="chip" data-val="1"><span class="emoji">🧑</span>1人</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-label">子供の人数</div>
+      <div class="chips" id="kidsServings">
+        <div class="chip active" data-val="0"><span class="emoji">➖</span>なし</div>
+        <div class="chip" data-val="1"><span class="emoji">🧒</span>1人</div>
+        <div class="chip" data-val="2"><span class="emoji">🧒🧒</span>2人</div>
+        <div class="chip" data-val="3"><span class="emoji">🧒🧒🧒</span>3人</div>
       </div>
     </div>
 
@@ -1482,6 +1489,15 @@ document.querySelectorAll('.chip').forEach(chip => {
 function getSelected(groupId) {
   return [...document.querySelectorAll(`#${groupId} .chip.active`)].map(c => c.dataset.val);
 }
+function getServingsInfo() {
+  const adults = parseInt(getSelected('adultsServings')[0] || '2');
+  const kids = parseInt(getSelected('kidsServings')[0] || '0');
+  const total = adults + kids || 1;
+  let label = `大人${adults}人`;
+  if (kids > 0) label += `・子供${kids}人`;
+  label += `（計${total}人前）`;
+  return { total, label };
+}
 function getAllergies() {
   return [...document.querySelectorAll('#allergies .chip.allergy-active')].map(c => c.dataset.val);
 }
@@ -1529,16 +1545,13 @@ async function _generateToday() {
   const genres = getSelected('genres');
   const cookTime = getSelected('cookTime');
   const difficulty = getSelected('difficulty');
-  const servingsArr = getSelected('servings');
-  const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
+  const { total: servings, label: servingsLabel } = getServingsInfo();
 
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('shoppingSection').classList.remove('show');
   document.getElementById('generateBtn').disabled = true;
-
-  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
 
   const prompt = `あなたは料理の専門家です。以下の条件で家庭料理を3〜4品提案してください。
 
@@ -1567,7 +1580,7 @@ ${difficulty.length ? `難易度: ${difficulty[0]}` : ''}${allergyPromptLine()}
 - tips: プロの失敗しないコツ3つ
 - 他のテキスト・マークダウン一切不要`;
 
-  window._currentServings = servings;
+  window._currentServings = servings; window._currentServingsLabel = servingsLabel;
 
   try {
     const text = await callAPI([{ role: 'user', content: prompt }], 2000);
@@ -1675,8 +1688,7 @@ async function generateShopping() {
   document.getElementById('shoppingLoading').style.display = 'block';
   document.getElementById('shoppingSection').classList.remove('show');
 
-  const servings = window._currentServings || 1;
-  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+  const servingsLabel = window._currentServingsLabel || '2人（計2人前）';
 
   const prompt = `以下の料理（${servingsLabel}）の買い出しリストを作ってください。
 料理：${recipeNames.join('、')}
@@ -1790,7 +1802,7 @@ function buildRecipeCard(r, fromFav = false) {
     <div class="recipe-meta">
       <div class="meta-pill cal">🔥 ${r.calories} kcal</div>
       <div class="meta-pill price">💴 約¥${r.cost}</div>
-      <div class="meta-pill">👤 ${r.servings || window._currentServings || 1}人前</div>
+      <div class="meta-pill">👤 ${window._currentServingsLabel || `${r.servings || window._currentServings || 2}人前`}</div>
     </div>
     <div class="recipe-desc">${r.description}</div>
     ${r.nutrition ? renderNutrition(r.nutrition) : ''}
@@ -1881,9 +1893,7 @@ async function generateFridge() {
     document.getElementById('fridgeInput').focus();
     return;
   }
-  const servingsArr = getSelected('servings');
-  const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
-  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+  const { total: servings, label: servingsLabel } = getServingsInfo();
   const genres = getSelected('genres');
   const cookTime = getSelected('cookTime');
   const difficulty = getSelected('difficulty');
@@ -1894,7 +1904,7 @@ async function generateFridge() {
   document.getElementById('shoppingSection').classList.remove('show');
   document.getElementById('weeklySection').classList.remove('show');
   document.getElementById('generateBtn').disabled = true;
-  window._currentServings = servings;
+  window._currentServings = servings; window._currentServingsLabel = servingsLabel;
 
   const prompt = `あなたは料理の専門家です。冷蔵庫にある食材だけを使って、${servingsLabel}分の家庭料理を3〜4品提案してください。
 冷蔵庫の食材：${fridgeItems.join('、')}
@@ -1932,9 +1942,7 @@ async function generateWeekly() {
   const genres = getSelected('genres');
   const cookTime = getSelected('cookTime');
   const difficulty = getSelected('difficulty');
-  const servingsArr = getSelected('servings');
-  const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
-  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+  const { total: servings, label: servingsLabel } = getServingsInfo();
 
   document.getElementById('weeklyLoading').style.display = 'block';
   document.getElementById('weeklySection').classList.remove('show');
@@ -1943,7 +1951,7 @@ async function generateWeekly() {
   document.getElementById('errorBox').classList.remove('show');
   document.getElementById('generateBtn').disabled = true;
 
-  window._currentServings = servings;
+  window._currentServings = servings; window._currentServingsLabel = servingsLabel;
 
   const prompt = `あなたは料理の専門家です。月曜〜日曜の7日分の夕食献立を考えてください。
 条件：

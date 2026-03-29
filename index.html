@@ -508,6 +508,84 @@
     opacity: 0.7;
   }
 
+  /* Fridge Mode */
+  .fridge-section { display: none; }
+  .fridge-section.show { display: block; }
+  .fridge-input-wrap {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .fridge-input {
+    flex: 1;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .fridge-input:focus { border-color: var(--accent); }
+  .fridge-input::placeholder { color: var(--text2); opacity: 0.6; }
+  .fridge-add-btn {
+    padding: 12px 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: 14px;
+    color: #1a1400;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .fridge-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+    min-height: 32px;
+  }
+  .fridge-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(232,160,69,0.15);
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .fridge-tag-remove {
+    cursor: pointer;
+    opacity: 0.6;
+    font-size: 12px;
+    line-height: 1;
+  }
+  .fridge-tag-remove:hover { opacity: 1; }
+  .fridge-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .fridge-shortcut {
+    padding: 5px 12px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .fridge-shortcut:hover { border-color: var(--accent); color: var(--accent); }
+  .fridge-hint { font-size: 11px; color: var(--text2); opacity: 0.6; margin-bottom: 16px; }
+
   /* Weekly Plan */
   .weekly-section { display: none; margin-bottom: 28px; }
   .weekly-section.show { display: block; }
@@ -668,6 +746,7 @@
 
   <div class="content">
 
+    <div id="normalSections">
     <!-- 食材 -->
     <div class="section">
       <div class="section-label">メイン食材</div>
@@ -747,6 +826,7 @@
         <div class="chip" data-val="ホットプレート"><span class="emoji">🍽️</span>ホットプレート</div>
       </div>
     </div>
+    </div><!-- /#normalSections -->
 
     <!-- 人数 -->
     <div class="section">
@@ -760,13 +840,41 @@
     </div>
 
     <!-- モード切り替え -->
-    <div class="mode-toggle">
-      <button class="mode-btn active" id="modeTodayBtn" onclick="setMode('today')">
+    <div class="mode-toggle" style="flex-wrap:wrap;">
+      <button class="mode-btn active" id="modeTodayBtn" onclick="setMode('today')" style="flex:1 1 calc(33% - 8px);min-width:80px;">
         <span>🍽️</span><span>今日の献立</span>
       </button>
-      <button class="mode-btn" id="modeWeekBtn" onclick="setMode('week')">
-        <span>📅</span><span>1週間の献立</span><span class="lock-badge" id="weekLockBadge">🔐</span>
+      <button class="mode-btn" id="modeWeekBtn" onclick="setMode('week')" style="flex:1 1 calc(33% - 8px);min-width:80px;">
+        <span>📅</span><span>1週間</span><span class="lock-badge" id="weekLockBadge">🔐</span>
       </button>
+      <button class="mode-btn" id="modeFridgeBtn" onclick="setMode('fridge')" style="flex:1 1 calc(33% - 8px);min-width:80px;">
+        <span>🧊</span><span>冷蔵庫から</span><span class="lock-badge" id="fridgeLockBadge">🔐</span>
+      </button>
+    </div>
+
+    <!-- 冷蔵庫モード入力 -->
+    <div class="fridge-section" id="fridgeSection">
+      <div class="section-label">冷蔵庫にある食材</div>
+      <div class="fridge-input-wrap">
+        <input class="fridge-input" id="fridgeInput" placeholder="食材を入力（例：鶏肉）" onkeydown="onFridgeKey(event)">
+        <button class="fridge-add-btn" onclick="addFridgeTag()">＋</button>
+      </div>
+      <div class="fridge-tags" id="fridgeTags"></div>
+      <div class="fridge-hint">よく使う食材をタップして追加</div>
+      <div class="fridge-shortcuts">
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('鶏肉')">🐔 鶏肉</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('豚肉')">🐷 豚肉</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('卵')">🥚 卵</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('豆腐')">🫘 豆腐</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('キャベツ')">🥬 キャベツ</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('玉ねぎ')">🧅 玉ねぎ</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('にんじん')">🥕 にんじん</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('じゃがいも')">🥔 じゃがいも</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('もやし')">🌾 もやし</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('トマト')">🍅 トマト</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('きのこ')">🍄 きのこ</span>
+        <span class="fridge-shortcut" onclick="addFridgeTagVal('ほうれん草')">🌿 ほうれん草</span>
+      </div>
     </div>
 
     <!-- ジャンル -->
@@ -888,6 +996,7 @@ function getSelected(groupId) {
 
 async function generate() {
   if (currentMode === 'week') { generateWeekly(); return; }
+  if (currentMode === 'fridge') { generateFridge(); return; }
   _generateToday();
 }
 async function _generateToday() {
@@ -1074,18 +1183,104 @@ function renderShopping(categories) {
 }
 
 let currentMode = 'today';
+const fridgeItems = [];
 
 function setMode(mode) {
-  if (mode === 'week' && !isPremium) {
+  if ((mode === 'week' || mode === 'fridge') && !isPremium) {
     showModal();
     return;
   }
   currentMode = mode;
   document.getElementById('modeTodayBtn').classList.toggle('active', mode === 'today');
   document.getElementById('modeWeekBtn').classList.toggle('active', mode === 'week');
-  document.getElementById('generateBtn').innerHTML = mode === 'week'
-    ? '<span>📅</span><span>1週間の献立を作る</span>'
-    : '<span>🍽️</span><span>料理を提案してもらう</span>';
+  document.getElementById('modeFridgeBtn').classList.toggle('active', mode === 'fridge');
+  document.getElementById('normalSections').style.display = mode === 'fridge' ? 'none' : '';
+  document.getElementById('fridgeSection').classList.toggle('show', mode === 'fridge');
+  const labels = {
+    today: '<span>🍽️</span><span>料理を提案してもらう</span>',
+    week:  '<span>📅</span><span>1週間の献立を作る</span>',
+    fridge:'<span>🧊</span><span>冷蔵庫の食材で提案してもらう</span>'
+  };
+  document.getElementById('generateBtn').innerHTML = labels[mode];
+}
+
+function onFridgeKey(e) {
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addFridgeTag(); }
+}
+function addFridgeTag() {
+  const input = document.getElementById('fridgeInput');
+  addFridgeTagVal(input.value.trim());
+  input.value = '';
+}
+function addFridgeTagVal(val) {
+  if (!val || fridgeItems.includes(val)) return;
+  fridgeItems.push(val);
+  renderFridgeTags();
+}
+function removeFridgeTag(val) {
+  const idx = fridgeItems.indexOf(val);
+  if (idx >= 0) fridgeItems.splice(idx, 1);
+  renderFridgeTags();
+}
+function renderFridgeTags() {
+  document.getElementById('fridgeTags').innerHTML = fridgeItems.map(v =>
+    `<div class="fridge-tag">${v}<span class="fridge-tag-remove" onclick="removeFridgeTag('${v}')">✕</span></div>`
+  ).join('');
+}
+
+async function generateFridge() {
+  if (!fridgeItems.length) {
+    document.getElementById('fridgeInput').focus();
+    return;
+  }
+  const servingsArr = getSelected('servings');
+  const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
+  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+  const genres = getSelected('genres');
+
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('shoppingSection').classList.remove('show');
+  document.getElementById('weeklySection').classList.remove('show');
+  document.getElementById('generateBtn').disabled = true;
+  window._currentServings = servings;
+
+  const prompt = `あなたは料理の専門家です。冷蔵庫にある食材だけを使って、${servingsLabel}分の家庭料理を3〜4品提案してください。
+冷蔵庫の食材：${fridgeItems.join('、')}
+人数：${servingsLabel}
+${genres.length ? `ジャンル・テーマ：${genres.join('、')}` : ''}
+
+【重要】提案する料理は必ず上記の冷蔵庫にある食材を中心に使うこと。買い足しが必要な場合は調味料程度に留めること。
+
+必ずJSON形式のみで返してください。以下の形式厳守：
+{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
+
+- calories: ${servingsLabel}合計のkcal（整数）
+- cost: ${servingsLabel}合計の目安原価（円、整数）
+- 他のテキスト・マークダウン一切不要`;
+
+  try {
+    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderRecipes(parsed.recipes);
+  } catch(e) {
+    document.getElementById('errorBox').classList.add('show');
+  } finally {
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('generateBtn').disabled = false;
+  }
 }
 
 async function generateWeekly() {
@@ -1187,6 +1382,7 @@ function unlockPremium() {
   closeModal();
   document.getElementById('unlockedBanner').classList.add('show');
   document.getElementById('weekLockBadge').style.display = 'none';
+  document.getElementById('fridgeLockBadge').style.display = 'none';
   // 既存のカードを再レンダリング
   const cards = document.querySelectorAll('.recipe-card');
   cards.forEach(card => {

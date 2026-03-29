@@ -7,20 +7,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0e0c;
-    --card: #1a1814;
-    --card2: #231f1a;
-    --accent: #e8a045;
-    --accent2: #c45c2a;
-    --text: #f0ebe3;
-    --text2: #9a9185;
-    --green: #5a8a5e;
+    --bg: #fff8f0;
+    --card: #ffffff;
+    --card2: #fff3e8;
+    --accent: #e8603c;
+    --accent2: #c94b25;
+    --text: #2d2017;
+    --text2: #8b7355;
+    --green: #4a8c5c;
     --red: #c44a3a;
-    --border: rgba(232,160,69,0.15);
+    --border: rgba(232,96,60,0.15);
+    --shadow: rgba(45,32,23,0.08);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    background: var(--bg);
+    background: #f5ede4;
     font-family: 'Noto Sans JP', sans-serif;
     color: var(--text);
     min-height: 100vh;
@@ -35,7 +36,7 @@
     background: var(--bg);
     border-radius: 40px;
     overflow: hidden;
-    box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06);
+    box-shadow: 0 20px 60px rgba(45,32,23,0.12), 0 0 0 1px rgba(232,96,60,0.1);
     position: relative;
   }
   .status-bar {
@@ -47,7 +48,7 @@
     padding: 0 28px;
     font-size: 12px;
     font-weight: 700;
-    color: var(--text2);
+    color: var(--text);
   }
   .header {
     padding: 8px 24px 20px;
@@ -59,17 +60,17 @@
     align-items: center;
   }
   .app-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
     color: var(--accent);
     letter-spacing: -0.5px;
   }
   .app-sub {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--text2);
-    margin-top: 2px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
+    margin-top: 3px;
+    letter-spacing: 0;
   }
   .premium-badge {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -171,7 +172,7 @@
   .spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid var(--border);
+    border: 3px solid rgba(232,96,60,0.15);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
@@ -210,6 +211,7 @@
     transition: all 0.3s;
     position: relative;
     overflow: hidden;
+    box-shadow: 0 2px 12px var(--shadow);
   }
   .recipe-card::before {
     content: '';
@@ -220,7 +222,7 @@
     opacity: 0;
     transition: opacity 0.3s;
   }
-  .recipe-card:hover { background: var(--card2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .recipe-card:hover { background: var(--card2); transform: translateY(-2px); box-shadow: 0 8px 24px var(--shadow); }
   .recipe-card:hover::before { opacity: 1; }
   .recipe-card.expanded { background: var(--card2); }
   .recipe-card.expanded::before { opacity: 1; }
@@ -247,7 +249,7 @@
     align-items: center;
     gap: 4px;
     padding: 4px 10px;
-    background: rgba(255,255,255,0.05);
+    background: var(--bg);
     border-radius: 100px;
     font-size: 12px;
     color: var(--text2);
@@ -353,6 +355,7 @@
     width: 100%;
     max-width: 390px;
     border: 1px solid var(--border);
+    box-shadow: 0 -8px 40px var(--shadow);
     animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   @keyframes slideUp {
@@ -367,8 +370,9 @@
     margin: 0 auto 24px;
   }
   .modal-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 24px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
     color: var(--accent);
     text-align: center;
     margin-bottom: 6px;
@@ -822,7 +826,7 @@
     <div class="header-top">
       <div>
         <div class="app-title">献立メーカー</div>
-        <div class="app-sub">AI Recipe Suggester</div>
+        <div class="app-sub">今日のごはん、AIにおまかせ</div>
       </div>
       <div class="premium-badge" onclick="showModal()">✨ PREMIUM</div>
     </div>

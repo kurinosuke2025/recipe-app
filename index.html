@@ -39,19 +39,8 @@
     box-shadow: 0 20px 60px rgba(45,32,23,0.12), 0 0 0 1px rgba(232,96,60,0.1);
     position: relative;
   }
-  .status-bar {
-    height: 44px;
-    background: var(--bg);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text);
-  }
   .header {
-    padding: 8px 24px 20px;
+    padding: 20px 24px 20px;
     background: linear-gradient(180deg, var(--bg) 0%, transparent 100%);
   }
   .header-top {
@@ -61,10 +50,11 @@
   }
   .app-title {
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 22px;
+    font-size: 28px;
     font-weight: 900;
     color: var(--accent);
     letter-spacing: -0.5px;
+    line-height: 1.1;
   }
   .app-sub {
     font-size: 12px;
@@ -1141,11 +1131,6 @@
 </head>
 <body>
 <div class="phone">
-  <div class="status-bar">
-    <span>9:41</span>
-    <span>📶 🔋</span>
-  </div>
-
   <div class="header">
     <div class="header-top">
       <div>

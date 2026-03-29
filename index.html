@@ -1466,6 +1466,11 @@
 
 <script>
 let isPremium = false;
+let favorites = (() => { try { return JSON.parse(localStorage.getItem('kondate_favorites') || '[]'); } catch { return []; } })();
+let currentMode = 'today';
+const fridgeItems = [];
+let chatHistory = [];
+let favViewOpen = false;
 
 // 起動時にバッジ更新
 updateFavBadge();
@@ -1726,8 +1731,6 @@ function renderShopping(categories) {
 }
 
 // ===== Favorites =====
-let favorites = (() => { try { return JSON.parse(localStorage.getItem('kondate_favorites') || '[]'); } catch { return []; } })();
-
 function saveFavorites() {
   try { localStorage.setItem('kondate_favorites', JSON.stringify(favorites)); } catch {}
   updateFavBadge();
@@ -1758,7 +1761,6 @@ function isFav(name) {
   return favorites.some(f => f.name === name);
 }
 
-let favViewOpen = false;
 function toggleFavView() {
   favViewOpen = !favViewOpen;
   const sec = document.getElementById('favSection');
@@ -1828,8 +1830,6 @@ function onFavClick(btn, e) {
 }
 
 // ===== Mode =====
-let currentMode = 'today';
-const fridgeItems = [];
 
 function setMode(mode) {
   if ((mode === 'week' || mode === 'fridge') && !isPremium) {
@@ -2008,8 +2008,6 @@ function renderWeekly(week) {
 }
 
 // ===== Chat =====
-let chatHistory = [];
-
 function openChat() {
   if (!isPremium) { showModal(); return; }
   document.getElementById('chatOverlay').classList.add('show');

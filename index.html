@@ -1494,6 +1494,31 @@ function allergyPromptLine() {
   return a.length ? `\n【絶対に使用禁止の食材・アレルギー対応】: ${a.join('、')}（これらを含む料理・食材は一切使わないこと）` : '';
 }
 
+// XSSエスケープ
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// 共通APIコール
+async function callAPI(messages, maxTokens = 2000, system = null) {
+  const body = { model: 'claude-sonnet-4-20250514', max_tokens: maxTokens, messages };
+  if (system) body.system = system;
+  const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!data.content || !Array.isArray(data.content)) throw new Error('Invalid API response');
+  return data.content.map(i => i.text || '').join('');
+}
+
+// JSONレスポンスのパース
+function parseJSON(text) {
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean);
+}
+
 async function generate() {
   if (currentMode === 'week') { generateWeekly(); return; }
   if (currentMode === 'fridge') { generateFridge(); return; }
@@ -1549,22 +1574,8 @@ ${difficulty.length ? `難易度: ${difficulty[0]}` : ''}${allergyPromptLine()}
   window._currentServings = servings;
 
   try {
-    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content.map(i => i.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const text = await callAPI([{ role: 'user', content: prompt }], 2000);
+    const parsed = parseJSON(text);
     renderRecipes(parsed.recipes);
   } catch(e) {
     document.getElementById('errorBox').classList.add('show');
@@ -1682,19 +1693,8 @@ async function generateShopping() {
 - 他のテキスト・マークダウン一切不要`;
 
   try {
-    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content.map(i => i.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const text = await callAPI([{ role: 'user', content: prompt }], 1000);
+    const parsed = parseJSON(text);
     renderShopping(parsed.categories);
   } catch(e) {
     document.getElementById('errorBox').classList.add('show');
@@ -1726,10 +1726,10 @@ function renderShopping(categories) {
 }
 
 // ===== Favorites =====
-let favorites = JSON.parse(localStorage.getItem('kondate_favorites') || '[]');
+let favorites = (() => { try { return JSON.parse(localStorage.getItem('kondate_favorites') || '[]'); } catch { return []; } })();
 
 function saveFavorites() {
-  localStorage.setItem('kondate_favorites', JSON.stringify(favorites));
+  try { localStorage.setItem('kondate_favorites', JSON.stringify(favorites)); } catch {}
   updateFavBadge();
 }
 function updateFavBadge() {
@@ -1823,7 +1823,6 @@ function onFavClick(btn, e) {
   const active = isFav(name);
   btn.textContent = active ? '❤️' : '🤍';
   btn.classList.toggle('active', active);
-  if (active) btn.classList.add('active');
   // お気に入り一覧が開いていれば再描画
   if (favViewOpen) renderFavList();
 }
@@ -1870,9 +1869,19 @@ function removeFridgeTag(val) {
   renderFridgeTags();
 }
 function renderFridgeTags() {
-  document.getElementById('fridgeTags').innerHTML = fridgeItems.map(v =>
-    `<div class="fridge-tag">${v}<span class="fridge-tag-remove" onclick="removeFridgeTag('${v}')">✕</span></div>`
-  ).join('');
+  const container = document.getElementById('fridgeTags');
+  container.innerHTML = '';
+  fridgeItems.forEach(v => {
+    const tag = document.createElement('div');
+    tag.className = 'fridge-tag';
+    tag.textContent = v;
+    const btn = document.createElement('span');
+    btn.className = 'fridge-tag-remove';
+    btn.textContent = '✕';
+    btn.onclick = () => removeFridgeTag(v);
+    tag.appendChild(btn);
+    container.appendChild(tag);
+  });
 }
 
 async function generateFridge() {
@@ -1913,19 +1922,8 @@ ${difficulty.length ? `難易度：${difficulty[0]}` : ''}${allergyPromptLine()}
 - 他のテキスト・マークダウン一切不要`;
 
   try {
-    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content.map(i => i.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const text = await callAPI([{ role: 'user', content: prompt }], 2000);
+    const parsed = parseJSON(text);
     renderRecipes(parsed.recipes);
   } catch(e) {
     document.getElementById('errorBox').classList.add('show');
@@ -1974,19 +1972,8 @@ ${difficulty.length ? `難易度: ${difficulty[0]}` : ''}${allergyPromptLine()}
 - 他のテキスト・マークダウン一切不要`;
 
   try {
-    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1200,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content.map(i => i.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
+    const text = await callAPI([{ role: 'user', content: prompt }], 1200);
+    const parsed = parseJSON(text);
     renderWeekly(parsed.week);
   } catch(e) {
     document.getElementById('errorBox').classList.add('show');
@@ -2047,7 +2034,10 @@ function sendSuggestion(btn) {
 function addUserMessage(text) {
   const wrap = document.createElement('div');
   wrap.className = 'chat-bubble-wrap user';
-  wrap.innerHTML = `<div class="chat-bubble user">${text.replace(/\n/g,'<br>')}</div>`;
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble user';
+  bubble.innerHTML = esc(text).replace(/\n/g,'<br>');
+  wrap.appendChild(bubble);
   document.getElementById('chatMessages').appendChild(wrap);
   scrollChat();
 }
@@ -2055,7 +2045,10 @@ function addUserMessage(text) {
 function addAiMessage(text) {
   const wrap = document.createElement('div');
   wrap.className = 'chat-bubble-wrap ai';
-  wrap.innerHTML = `<div class="chat-bubble ai">${text.replace(/\n/g,'<br>')}</div>`;
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble ai';
+  bubble.innerHTML = esc(text).replace(/\n/g,'<br>');
+  wrap.appendChild(bubble);
   document.getElementById('chatMessages').appendChild(wrap);
   scrollChat();
 }
@@ -2094,24 +2087,13 @@ async function sendChat() {
 - 箇条書きや改行を使って見やすくしてください`;
 
   try {
-    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        system: systemPrompt,
-        messages: chatHistory
-      })
-    });
-    const data = await res.json();
-    const reply = data.content.map(i => i.text || '').join('').trim();
+    const reply = await callAPI(chatHistory, 500, systemPrompt);
     chatHistory.push({ role: 'assistant', content: reply });
     typing.remove();
     addAiMessage(reply);
   } catch(e) {
     typing.remove();
-    addAiMessage('すみません、エラーが発生しました。もう一度お試しください。');
+    addAiMessage('エラーが発生しました。もう一度お試しください。');
   } finally {
     document.getElementById('chatSendBtn').disabled = false;
     input.focus();
@@ -2142,15 +2124,16 @@ function unlockPremium() {
   document.querySelectorAll('#allergies .chip').forEach(c => {
     c.addEventListener('click', () => c.classList.toggle('allergy-active'));
   });
-  // 既存のカードを再レンダリング
-  const cards = document.querySelectorAll('.recipe-card');
-  cards.forEach(card => {
-    const lockSection = card.querySelector('.pro-lock');
-    if (lockSection) {
-      const proSection = card.querySelector('.pro-section');
-      const name = card.querySelector('.recipe-name').textContent;
-      proSection.innerHTML = `<div class="pro-divider"></div><div class="pro-tips unlocked"><div class="pro-tip-item"><div class="tip-num">1</div><div class="tip-text">素材の下処理をしっかり行い、余分な水分をキッチンペーパーで取り除くと仕上がりが格段に良くなります</div></div><div class="pro-tip-item"><div class="tip-num">2</div><div class="tip-text">調理前に食材を常温に戻しておくことで、火の通りが均一になり失敗しにくくなります</div></div><div class="pro-tip-item"><div class="tip-num">3</div><div class="tip-text">味付けは最後の仕上げで調整。途中で味見を繰り返しながら少しずつ加えるのがプロの流儀です</div></div></div>`;
-    }
+  // 既存カードのロックを実際のtipsで置き換え
+  const allRecipes = [...(window._lastRecipes || []), ...favorites];
+  document.querySelectorAll('.recipe-card').forEach(card => {
+    if (!card.querySelector('.pro-lock')) return;
+    const name = card.querySelector('.recipe-name')?.textContent;
+    const recipe = allRecipes.find(r => r.name === name);
+    const proSection = card.querySelector('.pro-section');
+    if (!proSection) return;
+    const tips = recipe?.tips;
+    proSection.innerHTML = `<div class="pro-divider"></div>${tips ? renderTips(tips) : ''}<div class="pro-divider"></div>`;
   });
 }
 </script>

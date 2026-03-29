@@ -479,6 +479,77 @@
   }
   .step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
 
+  /* Favorites */
+  .fav-btn {
+    position: absolute;
+    top: 16px;
+    right: 44px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    z-index: 1;
+  }
+  .fav-btn:hover { transform: scale(1.2); }
+  .fav-btn.active { animation: heartPop 0.3s ease; }
+  @keyframes heartPop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(1.4); }
+    100% { transform: scale(1); }
+  }
+
+  .header-fav-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .header-fav-icon:hover { background: var(--card2); }
+  .fav-count-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    display: none;
+  }
+  .fav-count-badge.show { display: flex; }
+
+  .fav-section { display: none; margin-bottom: 28px; }
+  .fav-section.show { display: block; }
+  .fav-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+    font-size: 14px;
+  }
+  .fav-empty-icon { font-size: 40px; margin-bottom: 12px; }
+
   /* Mode Toggle */
   .mode-toggle {
     display: flex;
@@ -828,7 +899,13 @@
         <div class="app-title">献立メーカー</div>
         <div class="app-sub">今日のごはん、AIにおまかせ</div>
       </div>
-      <div class="premium-badge" onclick="showModal()">✨ PREMIUM</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="header-fav-icon" onclick="toggleFavView()" title="お気に入り">
+          🤍
+          <div class="fav-count-badge" id="favCountBadge">0</div>
+        </div>
+        <div class="premium-badge" onclick="showModal()">✨ PREMIUM</div>
+      </div>
     </div>
   </div>
 
@@ -1012,6 +1089,11 @@
       <span>料理を提案してもらう</span>
     </button>
 
+    <div class="fav-section" id="favSection">
+      <div class="results-label">❤️ お気に入り</div>
+      <div id="favList"></div>
+    </div>
+
     <div class="loading" id="loading">
       <div class="spinner"></div>
       <div class="loading-text">AIが料理を考えています…</div>
@@ -1087,6 +1169,9 @@
 
 <script>
 let isPremium = false;
+
+// 起動時にバッジ更新
+updateFavBadge();
 
 // チップ選択
 document.querySelectorAll('.chip').forEach(chip => {
@@ -1183,32 +1268,13 @@ ${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}${aller
 }
 
 function renderRecipes(recipes) {
+  window._lastRecipes = recipes.map(r => ({ ...r, servings: window._currentServings || 1 }));
   const list = document.getElementById('recipeList');
   list.innerHTML = '';
   const freeLimit = 2;
   recipes.forEach((r, i) => {
-    const card = document.createElement('div');
-    card.className = 'recipe-card';
-    card.innerHTML = `
-      <div class="recipe-header">
-        <div class="recipe-name">${r.name}</div>
-        <div class="expand-icon">⌄</div>
-      </div>
-      <div class="recipe-meta">
-        <div class="meta-pill cal">🔥 ${r.calories} kcal</div>
-        <div class="meta-pill price">💴 約¥${r.cost}</div>
-        <div class="meta-pill">👤 ${window._currentServings || 1}人前</div>
-      </div>
-      <div class="recipe-desc">${r.description}</div>
-      <div class="pro-section">
-        <div class="pro-divider"></div>
-        <div class="steps-list">
-          ${(r.steps || []).map((s, j) => `<div class="step-item"><div class="step-num">${j+1}</div><div class="step-text">${s}</div></div>`).join('')}
-        </div>
-        <div class="pro-divider"></div>
-        ${isPremium ? renderTips(r.tips) : renderLock()}
-      </div>
-    `;
+    r.servings = window._currentServings || 1;
+    const card = buildRecipeCard(r);
 
     if (!isPremium && i >= freeLimit) {
       const wrap = document.createElement('div');
@@ -1229,7 +1295,6 @@ function renderRecipes(recipes) {
         list.appendChild(hint);
       }
     } else {
-      card.addEventListener('click', () => card.classList.toggle('expanded'));
       list.appendChild(card);
     }
   });
@@ -1320,6 +1385,109 @@ function renderShopping(categories) {
   document.getElementById('shoppingSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ===== Favorites =====
+let favorites = JSON.parse(localStorage.getItem('kondate_favorites') || '[]');
+
+function saveFavorites() {
+  localStorage.setItem('kondate_favorites', JSON.stringify(favorites));
+  updateFavBadge();
+}
+function updateFavBadge() {
+  const badge = document.getElementById('favCountBadge');
+  if (favorites.length > 0) {
+    badge.textContent = favorites.length;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+  // アイコンを塗りつぶし
+  const icon = badge.parentElement;
+  icon.textContent = favorites.length > 0 ? '❤️' : '🤍';
+  icon.appendChild(badge);
+}
+function toggleFav(recipe) {
+  const idx = favorites.findIndex(f => f.name === recipe.name);
+  if (idx >= 0) {
+    favorites.splice(idx, 1);
+  } else {
+    favorites.push(recipe);
+  }
+  saveFavorites();
+}
+function isFav(name) {
+  return favorites.some(f => f.name === name);
+}
+
+let favViewOpen = false;
+function toggleFavView() {
+  favViewOpen = !favViewOpen;
+  const sec = document.getElementById('favSection');
+  if (favViewOpen) {
+    renderFavList();
+    sec.classList.add('show');
+    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    sec.classList.remove('show');
+  }
+}
+function renderFavList() {
+  const list = document.getElementById('favList');
+  list.innerHTML = '';
+  if (!favorites.length) {
+    list.innerHTML = `<div class="fav-empty"><div class="fav-empty-icon">🤍</div>まだお気に入りがありません<br><span style="font-size:12px;opacity:0.7;">レシピのハートをタップして保存しよう</span></div>`;
+    return;
+  }
+  favorites.forEach(r => {
+    const card = buildRecipeCard(r, true);
+    list.appendChild(card);
+  });
+}
+
+function buildRecipeCard(r, fromFav = false) {
+  const card = document.createElement('div');
+  card.className = 'recipe-card';
+  const favActive = isFav(r.name) ? 'active' : '';
+  const favIcon = isFav(r.name) ? '❤️' : '🤍';
+  card.innerHTML = `
+    <div class="recipe-header">
+      <div class="recipe-name">${r.name}</div>
+      <div class="expand-icon">⌄</div>
+    </div>
+    <div class="recipe-meta">
+      <div class="meta-pill cal">🔥 ${r.calories} kcal</div>
+      <div class="meta-pill price">💴 約¥${r.cost}</div>
+      <div class="meta-pill">👤 ${r.servings || window._currentServings || 1}人前</div>
+    </div>
+    <div class="recipe-desc">${r.description}</div>
+    <div class="pro-section">
+      <div class="pro-divider"></div>
+      <div class="steps-list">
+        ${(r.steps || []).map((s, j) => `<div class="step-item"><div class="step-num">${j+1}</div><div class="step-text">${s}</div></div>`).join('')}
+      </div>
+      <div class="pro-divider"></div>
+      ${isPremium ? renderTips(r.tips) : renderLock()}
+    </div>
+    <button class="fav-btn ${favActive}" onclick="onFavClick(this, event)" data-name="${r.name.replace(/"/g,'&quot;')}">${favIcon}</button>
+  `;
+  card.addEventListener('click', () => card.classList.toggle('expanded'));
+  return card;
+}
+
+function onFavClick(btn, e) {
+  e.stopPropagation();
+  const name = btn.dataset.name;
+  const recipe = [...favorites, ...(window._lastRecipes || [])].find(r => r.name === name);
+  if (!recipe) return;
+  toggleFav(recipe);
+  const active = isFav(name);
+  btn.textContent = active ? '❤️' : '🤍';
+  btn.classList.toggle('active', active);
+  if (active) btn.classList.add('active');
+  // お気に入り一覧が開いていれば再描画
+  if (favViewOpen) renderFavList();
+}
+
+// ===== Mode =====
 let currentMode = 'today';
 const fridgeItems = [];
 

@@ -637,6 +637,55 @@
     color: var(--text2);
   }
 
+  /* Locked Recipe Card */
+  .recipe-card-locked {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .recipe-card-locked .recipe-card {
+    margin-bottom: 0;
+    filter: blur(3px);
+    pointer-events: none;
+    user-select: none;
+  }
+  .recipe-card-locked-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15,14,12,0.6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 20px;
+    border: 1.5px solid var(--accent);
+  }
+  .locked-overlay-text {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+  }
+  .locked-overlay-btn {
+    padding: 10px 24px;
+    background: var(--accent);
+    border: none;
+    border-radius: 20px;
+    color: #1a1400;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+  .more-locked-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text2);
+    margin: -4px 0 16px;
+    opacity: 0.7;
+  }
+
   /* Shopping List Button */
   .shopping-btn {
     width: 100%;
@@ -1067,10 +1116,11 @@ ${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
 function renderRecipes(recipes) {
   const list = document.getElementById('recipeList');
   list.innerHTML = '';
+  const freeLimit = 2;
   recipes.forEach((r, i) => {
-    const div = document.createElement('div');
-    div.className = 'recipe-card';
-    div.innerHTML = `
+    const card = document.createElement('div');
+    card.className = 'recipe-card';
+    card.innerHTML = `
       <div class="recipe-header">
         <div class="recipe-name">${r.name}</div>
         <div class="expand-icon">⌄</div>
@@ -1084,16 +1134,35 @@ function renderRecipes(recipes) {
       <div class="pro-section">
         <div class="pro-divider"></div>
         <div class="steps-list">
-          ${(r.steps || []).map((s, i) => `<div class="step-item"><div class="step-num">${i+1}</div><div class="step-text">${s}</div></div>`).join('')}
+          ${(r.steps || []).map((s, j) => `<div class="step-item"><div class="step-num">${j+1}</div><div class="step-text">${s}</div></div>`).join('')}
         </div>
         <div class="pro-divider"></div>
         ${isPremium ? renderTips(r.tips) : renderLock()}
       </div>
     `;
-    div.addEventListener('click', () => {
-      div.classList.toggle('expanded');
-    });
-    list.appendChild(div);
+
+    if (!isPremium && i >= freeLimit) {
+      const wrap = document.createElement('div');
+      wrap.className = 'recipe-card-locked';
+      wrap.appendChild(card);
+      const overlay = document.createElement('div');
+      overlay.className = 'recipe-card-locked-overlay';
+      overlay.innerHTML = `
+        <div class="locked-overlay-text">🔐 プレミアムで表示</div>
+        <button class="locked-overlay-btn" onclick="showModal()">続きを見る</button>
+      `;
+      wrap.appendChild(overlay);
+      list.appendChild(wrap);
+      if (i === freeLimit) {
+        const hint = document.createElement('div');
+        hint.className = 'more-locked-hint';
+        hint.textContent = `あと${recipes.length - freeLimit}品がプレミアムで見られます`;
+        list.appendChild(hint);
+      }
+    } else {
+      card.addEventListener('click', () => card.classList.toggle('expanded'));
+      list.appendChild(card);
+    }
   });
   document.getElementById('results').classList.add('show');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });

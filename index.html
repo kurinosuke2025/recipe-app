@@ -991,6 +991,26 @@
         <div class="chip" data-val="ホットプレート"><span class="emoji">🍽️</span>ホットプレート</div>
       </div>
     </div>
+    <!-- 調理時間 -->
+    <div class="section">
+      <div class="section-label">調理時間</div>
+      <div class="chips" id="cookTime">
+        <div class="chip" data-val="10分以内"><span class="emoji">⚡</span>10分以内</div>
+        <div class="chip" data-val="15分以内"><span class="emoji">🕐</span>15分以内</div>
+        <div class="chip" data-val="30分以内"><span class="emoji">🕒</span>30分以内</div>
+        <div class="chip" data-val="時間をかけてOK"><span class="emoji">🍲</span>じっくり</div>
+      </div>
+    </div>
+
+    <!-- 難易度 -->
+    <div class="section">
+      <div class="section-label">難易度</div>
+      <div class="chips" id="difficulty">
+        <div class="chip" data-val="初心者でも簡単"><span class="emoji">🌱</span>初心者向け</div>
+        <div class="chip" data-val="普通"><span class="emoji">🍳</span>ふつう</div>
+        <div class="chip" data-val="本格的・手間をかけてOK"><span class="emoji">👨‍🍳</span>本格派</div>
+      </div>
+    </div>
     </div><!-- /#normalSections -->
 
     <!-- 人数 -->
@@ -1209,6 +1229,8 @@ async function _generateToday() {
   const methods = getSelected('methods');
   const appliances = getSelected('appliances');
   const genres = getSelected('genres');
+  const cookTime = getSelected('cookTime');
+  const difficulty = getSelected('difficulty');
   const servingsArr = getSelected('servings');
   const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
 
@@ -1228,7 +1250,9 @@ ${vegetables.length ? `野菜・副食材: ${vegetables.join('、')}` : ''}
 調理方法: ${methods.join('、')}
 ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` : ''}
 人数: ${servingsLabel}
-${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}${allergyPromptLine()}
+${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
+${cookTime.length ? `調理時間の目安: ${cookTime[0]}` : ''}
+${difficulty.length ? `難易度: ${difficulty[0]}` : ''}${allergyPromptLine()}
 
 必ずJSON形式のみで返してください。以下の形式厳守：
 {"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
@@ -1543,6 +1567,8 @@ async function generateFridge() {
   const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
   const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
   const genres = getSelected('genres');
+  const cookTime = getSelected('cookTime');
+  const difficulty = getSelected('difficulty');
 
   document.getElementById('loading').classList.add('show');
   document.getElementById('results').classList.remove('show');
@@ -1555,7 +1581,9 @@ async function generateFridge() {
   const prompt = `あなたは料理の専門家です。冷蔵庫にある食材だけを使って、${servingsLabel}分の家庭料理を3〜4品提案してください。
 冷蔵庫の食材：${fridgeItems.join('、')}
 人数：${servingsLabel}
-${genres.length ? `ジャンル・テーマ：${genres.join('、')}` : ''}${allergyPromptLine()}
+${genres.length ? `ジャンル・テーマ：${genres.join('、')}` : ''}
+${cookTime.length ? `調理時間の目安：${cookTime[0]}` : ''}
+${difficulty.length ? `難易度：${difficulty[0]}` : ''}${allergyPromptLine()}
 
 【重要】提案する料理は必ず上記の冷蔵庫にある食材を中心に使うこと。買い足しが必要な場合は調味料程度に留めること。
 
@@ -1594,6 +1622,8 @@ async function generateWeekly() {
   const vegetables = getSelected('vegetables');
   const seasonings = getSelected('seasonings');
   const genres = getSelected('genres');
+  const cookTime = getSelected('cookTime');
+  const difficulty = getSelected('difficulty');
   const servingsArr = getSelected('servings');
   const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
   const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
@@ -1613,7 +1643,9 @@ ${ingredients.length ? `メイン食材の好み: ${ingredients.join('、')}` : 
 ${vegetables.length ? `野菜の好み: ${vegetables.join('、')}` : ''}
 ${seasonings.length ? `調味料: ${seasonings.join('、')}` : ''}
 人数: ${servingsLabel}
-${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}${allergyPromptLine()}
+${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
+${cookTime.length ? `調理時間の目安: ${cookTime[0]}` : ''}
+${difficulty.length ? `難易度: ${difficulty[0]}` : ''}${allergyPromptLine()}
 
 必ずJSON形式のみで返してください：
 {"week":[{"day":"月","name":"料理名","description":"一言説明（25文字以内）","calories":数字,"cost":数字},{"day":"火",...},{"day":"水",...},{"day":"木",...},{"day":"金",...},{"day":"土",...},{"day":"日",...}]}

@@ -479,6 +479,69 @@
   }
   .step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
 
+  /* Nutrition Panel */
+  .nutrition-panel {
+    background: var(--bg);
+    border-radius: 14px;
+    padding: 14px;
+    margin-top: 14px;
+  }
+  .nutrition-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .nutrition-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+  }
+  .nutrition-label {
+    font-size: 11px;
+    color: var(--text2);
+    width: 64px;
+    flex-shrink: 0;
+  }
+  .nutrition-bar-wrap {
+    flex: 1;
+    height: 6px;
+    background: rgba(45,32,23,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .nutrition-bar {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .nutrition-bar.protein { background: #e87878; }
+  .nutrition-bar.fat     { background: #e8b978; }
+  .nutrition-bar.carbs   { background: #78b8e8; }
+  .nutrition-bar.fiber   { background: #78c878; }
+  .nutrition-bar.salt    { background: #b878e8; }
+  .nutrition-val {
+    font-size: 11px;
+    color: var(--text);
+    font-weight: 700;
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .nutrition-pct {
+    font-size: 10px;
+    color: var(--text2);
+    width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .nutrition-over { color: var(--accent); }
+
   /* Favorites */
   .fav-btn {
     position: absolute;
@@ -1255,10 +1318,16 @@ ${cookTime.length ? `調理時間の目安: ${cookTime[0]}` : ''}
 ${difficulty.length ? `難易度: ${difficulty[0]}` : ''}${allergyPromptLine()}
 
 必ずJSON形式のみで返してください。以下の形式厳守：
-{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
+{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"nutrition":{"protein":数字,"fat":数字,"carbs":数字,"fiber":数字,"salt":数字},"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
 
 - calories: ${servingsLabel}合計のkcal（整数）
 - cost: ${servingsLabel}合計の目安原価（円、整数）
+- nutrition: ${servingsLabel}あたりの栄養素（整数または小数1桁）
+  - protein: たんぱく質(g)
+  - fat: 脂質(g)
+  - carbs: 炭水化物(g)
+  - fiber: 食物繊維(g)
+  - salt: 塩分(g)
 - steps: 作り方を10ステップ前後で（例：食材を切る、調味料を合わせる、焼く、盛りつける）
 - tips: プロの失敗しないコツ3つ
 - 他のテキスト・マークダウン一切不要`;
@@ -1324,6 +1393,39 @@ function renderRecipes(recipes) {
   });
   document.getElementById('results').classList.add('show');
   document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// 1日の推奨摂取量（成人平均）
+const DAILY = { protein: 65, fat: 55, carbs: 250, fiber: 20, salt: 7.5 };
+const NUTRITION_LABELS = {
+  protein: 'たんぱく質',
+  fat:     '脂質',
+  carbs:   '炭水化物',
+  fiber:   '食物繊維',
+  salt:    '塩分'
+};
+const NUTRITION_UNITS = { protein: 'g', fat: 'g', carbs: 'g', fiber: 'g', salt: 'g' };
+
+function renderNutrition(n) {
+  const rows = ['protein','fat','carbs','fiber','salt'].map(key => {
+    const val = n[key] ?? 0;
+    const pct = Math.min(Math.round(val / DAILY[key] * 100), 999);
+    const over = pct > 80;
+    return `
+      <div class="nutrition-row">
+        <div class="nutrition-label">${NUTRITION_LABELS[key]}</div>
+        <div class="nutrition-bar-wrap">
+          <div class="nutrition-bar ${key}" style="width:${Math.min(pct,100)}%"></div>
+        </div>
+        <div class="nutrition-val">${val}${NUTRITION_UNITS[key]}</div>
+        <div class="nutrition-pct ${over ? 'nutrition-over' : ''}">${pct}%</div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="nutrition-panel">
+      <div class="nutrition-title">📊 栄養素（1日の推奨量に対する割合）</div>
+      ${rows}
+    </div>`;
 }
 
 function renderTips(tips) {
@@ -1483,6 +1585,7 @@ function buildRecipeCard(r, fromFav = false) {
       <div class="meta-pill">👤 ${r.servings || window._currentServings || 1}人前</div>
     </div>
     <div class="recipe-desc">${r.description}</div>
+    ${r.nutrition ? renderNutrition(r.nutrition) : ''}
     <div class="pro-section">
       <div class="pro-divider"></div>
       <div class="steps-list">
@@ -1588,10 +1691,11 @@ ${difficulty.length ? `難易度：${difficulty[0]}` : ''}${allergyPromptLine()}
 【重要】提案する料理は必ず上記の冷蔵庫にある食材を中心に使うこと。買い足しが必要な場合は調味料程度に留めること。
 
 必ずJSON形式のみで返してください。以下の形式厳守：
-{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
+{"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"nutrition":{"protein":数字,"fat":数字,"carbs":数字,"fiber":数字,"salt":数字},"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
 
 - calories: ${servingsLabel}合計のkcal（整数）
 - cost: ${servingsLabel}合計の目安原価（円、整数）
+- nutrition: ${servingsLabel}あたりの栄養素（protein:たんぱく質g, fat:脂質g, carbs:炭水化物g, fiber:食物繊維g, salt:塩分g）
 - 他のテキスト・マークダウン一切不要`;
 
   try {

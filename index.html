@@ -475,6 +475,90 @@
   }
   .step-text { font-size: 13px; line-height: 1.6; color: var(--text); }
 
+  /* Mode Toggle */
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 12px 8px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .mode-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #1a1400;
+  }
+  .mode-btn .lock-badge {
+    font-size: 11px;
+    opacity: 0.7;
+  }
+
+  /* Weekly Plan */
+  .weekly-section { display: none; margin-bottom: 28px; }
+  .weekly-section.show { display: block; }
+  .week-grid { display: flex; flex-direction: column; gap: 10px; }
+  .day-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .day-card:hover { background: var(--card2); }
+  .day-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    flex-shrink: 0;
+    color: var(--text2);
+  }
+  .day-badge.sat { color: #5b9cf6; background: rgba(91,156,246,0.12); }
+  .day-badge.sun { color: #e87070; background: rgba(232,112,112,0.12); }
+  .day-info { flex: 1; min-width: 0; }
+  .day-meal-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .day-meal-desc { font-size: 12px; color: var(--text2); }
+  .day-meta { display: flex; gap: 6px; flex-shrink: 0; }
+  .day-pill {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    background: var(--card2);
+    color: var(--text2);
+  }
+
   /* Shopping List Button */
   .shopping-btn {
     width: 100%;
@@ -675,6 +759,16 @@
       </div>
     </div>
 
+    <!-- モード切り替え -->
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeTodayBtn" onclick="setMode('today')">
+        <span>🍽️</span><span>今日の献立</span>
+      </button>
+      <button class="mode-btn" id="modeWeekBtn" onclick="setMode('week')">
+        <span>📅</span><span>1週間の献立</span><span class="lock-badge" id="weekLockBadge">🔐</span>
+      </button>
+    </div>
+
     <!-- ジャンル -->
     <div class="section">
       <div class="section-label">ジャンル・テーマ</div>
@@ -715,6 +809,16 @@
         <span>🛒</span>
         <span>買い出しリストを作る</span>
       </button>
+    </div>
+
+    <div class="loading" id="weeklyLoading" style="display:none;">
+      <div class="spinner"></div>
+      <div class="loading-text">1週間分の献立を考えています…</div>
+    </div>
+
+    <div class="weekly-section" id="weeklySection">
+      <div class="results-label">📅 1週間の献立</div>
+      <div class="week-grid" id="weekGrid"></div>
     </div>
 
     <div class="loading" id="shoppingLoading" style="display:none;">
@@ -783,6 +887,10 @@ function getSelected(groupId) {
 }
 
 async function generate() {
+  if (currentMode === 'week') { generateWeekly(); return; }
+  _generateToday();
+}
+async function _generateToday() {
   const ingredients = getSelected('ingredients');
   const vegetables = getSelected('vegetables');
   const seasonings = getSelected('seasonings');
@@ -965,6 +1073,102 @@ function renderShopping(categories) {
   document.getElementById('shoppingSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+let currentMode = 'today';
+
+function setMode(mode) {
+  if (mode === 'week' && !isPremium) {
+    showModal();
+    return;
+  }
+  currentMode = mode;
+  document.getElementById('modeTodayBtn').classList.toggle('active', mode === 'today');
+  document.getElementById('modeWeekBtn').classList.toggle('active', mode === 'week');
+  document.getElementById('generateBtn').innerHTML = mode === 'week'
+    ? '<span>📅</span><span>1週間の献立を作る</span>'
+    : '<span>🍽️</span><span>料理を提案してもらう</span>';
+}
+
+async function generateWeekly() {
+  const ingredients = getSelected('ingredients');
+  const vegetables = getSelected('vegetables');
+  const seasonings = getSelected('seasonings');
+  const genres = getSelected('genres');
+  const servingsArr = getSelected('servings');
+  const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
+  const servingsLabel = servings === 1 ? '1人前' : `${servings}人前`;
+
+  document.getElementById('weeklyLoading').style.display = 'block';
+  document.getElementById('weeklySection').classList.remove('show');
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('shoppingSection').classList.remove('show');
+  document.getElementById('errorBox').classList.remove('show');
+  document.getElementById('generateBtn').disabled = true;
+
+  window._currentServings = servings;
+
+  const prompt = `あなたは料理の専門家です。月曜〜日曜の7日分の夕食献立を考えてください。
+条件：
+${ingredients.length ? `メイン食材の好み: ${ingredients.join('、')}` : ''}
+${vegetables.length ? `野菜の好み: ${vegetables.join('、')}` : ''}
+${seasonings.length ? `調味料: ${seasonings.join('、')}` : ''}
+人数: ${servingsLabel}
+${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
+
+必ずJSON形式のみで返してください：
+{"week":[{"day":"月","name":"料理名","description":"一言説明（25文字以内）","calories":数字,"cost":数字},{"day":"火",...},{"day":"水",...},{"day":"木",...},{"day":"金",...},{"day":"土",...},{"day":"日",...}]}
+
+- calories: ${servingsLabel}合計のkcal
+- cost: ${servingsLabel}合計の目安原価（円）
+- 7日分すべて異なる料理にすること
+- 他のテキスト・マークダウン一切不要`;
+
+  try {
+    const res = await fetch('https://recipe-proxy.kuri-3-2106-2tom.workers.dev/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(i => i.text || '').join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    renderWeekly(parsed.week);
+  } catch(e) {
+    document.getElementById('errorBox').classList.add('show');
+  } finally {
+    document.getElementById('weeklyLoading').style.display = 'none';
+    document.getElementById('generateBtn').disabled = false;
+  }
+}
+
+function renderWeekly(week) {
+  const grid = document.getElementById('weekGrid');
+  grid.innerHTML = '';
+  const satSun = { '土': 'sat', '日': 'sun' };
+  week.forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'day-card';
+    div.innerHTML = `
+      <div class="day-badge ${satSun[d.day] || ''}">${d.day}</div>
+      <div class="day-info">
+        <div class="day-meal-name">${d.name}</div>
+        <div class="day-meal-desc">${d.description}</div>
+      </div>
+      <div class="day-meta">
+        <div class="day-pill">🔥${d.calories}</div>
+        <div class="day-pill">¥${d.cost}</div>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+  document.getElementById('weeklySection').classList.add('show');
+  document.getElementById('weeklySection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function showModal() {
   document.getElementById('modalOverlay').classList.add('show');
 }
@@ -982,6 +1186,7 @@ function unlockPremium() {
   isPremium = true;
   closeModal();
   document.getElementById('unlockedBanner').classList.add('show');
+  document.getElementById('weekLockBadge').style.display = 'none';
   // 既存のカードを再レンダリング
   const cards = document.querySelectorAll('.recipe-card');
   cards.forEach(card => {

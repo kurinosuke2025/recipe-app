@@ -508,6 +508,41 @@
     opacity: 0.7;
   }
 
+  /* Allergy Section */
+  .allergy-wrap {
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .allergy-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15,14,12,0.7);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .allergy-overlay-text { font-size: 13px; color: var(--text2); font-weight: 600; }
+  .allergy-overlay-btn {
+    padding: 7px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 14px;
+    color: #1a1400;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+  }
+  .chip.allergy-active {
+    background: rgba(196,74,58,0.15);
+    border-color: #c44a3a;
+    color: #e87070;
+  }
+
   /* Fridge Mode */
   .fridge-section { display: none; }
   .fridge-section.show { display: block; }
@@ -941,6 +976,29 @@
       </div>
     </div>
 
+    <!-- アレルギー・除外食材 -->
+    <div class="section">
+      <div class="section-label">🚫 アレルギー・除外食材 <span style="font-size:11px;color:var(--accent);font-weight:700;">PREMIUM</span></div>
+      <div class="allergy-wrap" id="allergyWrap">
+        <div class="chips multi" id="allergies">
+          <div class="chip" data-val="卵"><span class="emoji">🥚</span>卵</div>
+          <div class="chip" data-val="乳製品"><span class="emoji">🥛</span>乳製品</div>
+          <div class="chip" data-val="小麦・グルテン"><span class="emoji">🌾</span>小麦</div>
+          <div class="chip" data-val="えび"><span class="emoji">🦐</span>えび</div>
+          <div class="chip" data-val="かに"><span class="emoji">🦀</span>かに</div>
+          <div class="chip" data-val="そば"><span class="emoji">🍜</span>そば</div>
+          <div class="chip" data-val="落花生・ピーナッツ"><span class="emoji">🥜</span>ピーナッツ</div>
+          <div class="chip" data-val="魚介類"><span class="emoji">🐟</span>魚介類</div>
+          <div class="chip" data-val="肉類"><span class="emoji">🥩</span>肉類</div>
+          <div class="chip" data-val="大豆・豆腐"><span class="emoji">🫘</span>大豆</div>
+        </div>
+        <div class="allergy-overlay" id="allergyOverlay" onclick="showModal()">
+          <span class="allergy-overlay-text">🔐 プレミアムで設定</span>
+          <button class="allergy-overlay-btn" onclick="showModal()">解除</button>
+        </div>
+      </div>
+    </div>
+
     <div class="unlocked-banner" id="unlockedBanner">
       ✅ PREMIUMモードでプロのコツが見られます！
     </div>
@@ -1042,6 +1100,13 @@ document.querySelectorAll('.chip').forEach(chip => {
 function getSelected(groupId) {
   return [...document.querySelectorAll(`#${groupId} .chip.active`)].map(c => c.dataset.val);
 }
+function getAllergies() {
+  return [...document.querySelectorAll('#allergies .chip.allergy-active')].map(c => c.dataset.val);
+}
+function allergyPromptLine() {
+  const a = getAllergies();
+  return a.length ? `\n【絶対に使用禁止の食材・アレルギー対応】: ${a.join('、')}（これらを含む料理・食材は一切使わないこと）` : '';
+}
 
 async function generate() {
   if (currentMode === 'week') { generateWeekly(); return; }
@@ -1074,7 +1139,7 @@ ${vegetables.length ? `野菜・副食材: ${vegetables.join('、')}` : ''}
 調理方法: ${methods.join('、')}
 ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` : ''}
 人数: ${servingsLabel}
-${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
+${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}${allergyPromptLine()}
 
 必ずJSON形式のみで返してください。以下の形式厳守：
 {"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}
@@ -1318,7 +1383,7 @@ async function generateFridge() {
   const prompt = `あなたは料理の専門家です。冷蔵庫にある食材だけを使って、${servingsLabel}分の家庭料理を3〜4品提案してください。
 冷蔵庫の食材：${fridgeItems.join('、')}
 人数：${servingsLabel}
-${genres.length ? `ジャンル・テーマ：${genres.join('、')}` : ''}
+${genres.length ? `ジャンル・テーマ：${genres.join('、')}` : ''}${allergyPromptLine()}
 
 【重要】提案する料理は必ず上記の冷蔵庫にある食材を中心に使うこと。買い足しが必要な場合は調味料程度に留めること。
 
@@ -1376,7 +1441,7 @@ ${ingredients.length ? `メイン食材の好み: ${ingredients.join('、')}` : 
 ${vegetables.length ? `野菜の好み: ${vegetables.join('、')}` : ''}
 ${seasonings.length ? `調味料: ${seasonings.join('、')}` : ''}
 人数: ${servingsLabel}
-${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
+${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}${allergyPromptLine()}
 
 必ずJSON形式のみで返してください：
 {"week":[{"day":"月","name":"料理名","description":"一言説明（25文字以内）","calories":数字,"cost":数字},{"day":"火",...},{"day":"水",...},{"day":"木",...},{"day":"金",...},{"day":"土",...},{"day":"日",...}]}
@@ -1452,6 +1517,10 @@ function unlockPremium() {
   document.getElementById('unlockedBanner').classList.add('show');
   document.getElementById('weekLockBadge').style.display = 'none';
   document.getElementById('fridgeLockBadge').style.display = 'none';
+  document.getElementById('allergyOverlay').style.display = 'none';
+  document.querySelectorAll('#allergies .chip').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('allergy-active'));
+  });
   // 既存のカードを再レンダリング
   const cards = document.querySelectorAll('.recipe-card');
   cards.forEach(card => {

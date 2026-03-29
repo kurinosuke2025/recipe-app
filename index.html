@@ -675,6 +675,21 @@
       </div>
     </div>
 
+    <!-- ジャンル -->
+    <div class="section">
+      <div class="section-label">ジャンル・テーマ</div>
+      <div class="chips multi" id="genres">
+        <div class="chip" data-val="子供が喜ぶ"><span class="emoji">👧</span>子供が喜ぶ</div>
+        <div class="chip" data-val="家族向け"><span class="emoji">👨‍👩‍👧‍👦</span>家族向け</div>
+        <div class="chip" data-val="栄養バランス重視"><span class="emoji">🥗</span>栄養バランス</div>
+        <div class="chip" data-val="ダイエット向け"><span class="emoji">⚖️</span>ダイエット</div>
+        <div class="chip" data-val="時短・簡単"><span class="emoji">⏱️</span>時短・簡単</div>
+        <div class="chip" data-val="おもてなし"><span class="emoji">🍾</span>おもてなし</div>
+        <div class="chip" data-val="作り置き向け"><span class="emoji">📦</span>作り置き</div>
+        <div class="chip" data-val="お弁当向け"><span class="emoji">🍱</span>お弁当</div>
+      </div>
+    </div>
+
     <div class="unlocked-banner" id="unlockedBanner">
       ✅ PREMIUMモードでプロのコツが見られます！
     </div>
@@ -773,6 +788,7 @@ async function generate() {
   const seasonings = getSelected('seasonings');
   const methods = getSelected('methods');
   const appliances = getSelected('appliances');
+  const genres = getSelected('genres');
   const servingsArr = getSelected('servings');
   const servings = servingsArr.length ? parseInt(servingsArr[0]) : 1;
 
@@ -792,6 +808,7 @@ ${vegetables.length ? `野菜・副食材: ${vegetables.join('、')}` : ''}
 調理方法: ${methods.join('、')}
 ${appliances.length ? `使用できる調理家電: ${appliances.join('、')}` : ''}
 人数: ${servingsLabel}
+${genres.length ? `ジャンル・テーマ: ${genres.join('、')}` : ''}
 
 必ずJSON形式のみで返してください。以下の形式厳守：
 {"recipes":[{"name":"料理名","description":"一言説明（30文字以内）","calories":数字,"cost":数字,"steps":["ステップ1","ステップ2","ステップ3","ステップ4","ステップ5","ステップ6","ステップ7","ステップ8","ステップ9","ステップ10"],"tips":["コツ1","コツ2","コツ3"]}]}

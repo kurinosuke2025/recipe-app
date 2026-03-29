@@ -1383,6 +1383,14 @@
         <span>🛒</span>
         <span>買い出しリストを作る</span>
       </button>
+      <div class="loading" id="shoppingLoading" style="display:none;">
+        <div class="spinner"></div>
+        <div class="loading-text">買い出しリストを作成中…</div>
+      </div>
+      <div class="shopping-section" id="shoppingSection">
+        <div class="results-label">🛒 買い出しリスト</div>
+        <div id="shoppingList"></div>
+      </div>
     </div>
 
     <div class="loading" id="weeklyLoading" style="display:none;">
@@ -1393,16 +1401,6 @@
     <div class="weekly-section" id="weeklySection">
       <div class="results-label">📅 1週間の献立</div>
       <div class="week-grid" id="weekGrid"></div>
-    </div>
-
-    <div class="loading" id="shoppingLoading" style="display:none;">
-      <div class="spinner"></div>
-      <div class="loading-text">買い出しリストを作成中…</div>
-    </div>
-
-    <div class="shopping-section" id="shoppingSection">
-      <div class="results-label">🛒 買い出しリスト</div>
-      <div id="shoppingList"></div>
     </div>
 
   </div>

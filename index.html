@@ -307,6 +307,14 @@
     display: none;
   }
   .pro-tips.unlocked { display: block; }
+  .pro-tips-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
   .pro-tip-item {
     display: flex;
     gap: 12px;
@@ -1643,6 +1651,7 @@ function renderNutrition(n) {
 
 function renderTips(tips) {
   return `<div class="pro-tips unlocked">
+    <div class="pro-tips-label">🍳 プロのコツ</div>
     ${tips.map((t, i) => `<div class="pro-tip-item"><div class="tip-num">${i+1}</div><div class="tip-text">${t}</div></div>`).join('')}
   </div>`;
 }
@@ -2114,7 +2123,8 @@ function unlockPremium() {
     const proSection = card.querySelector('.pro-section');
     if (!proSection) return;
     const tips = recipe?.tips;
-    proSection.innerHTML = `<div class="pro-divider"></div>${tips ? renderTips(tips) : ''}<div class="pro-divider"></div>`;
+    const lockEl = proSection.querySelector('.pro-lock');
+    if (lockEl) lockEl.outerHTML = tips ? renderTips(tips) : '';
   });
 }
 </script>
